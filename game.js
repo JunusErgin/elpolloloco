@@ -87,6 +87,7 @@ function drawGround() {
     }
 }
 
+
 function listenForKeys() {
     document.addEventListener("keydown", e => {
         const k = e.key;
