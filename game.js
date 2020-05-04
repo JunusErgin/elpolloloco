@@ -3,6 +3,7 @@ let ctx;
 let character_x = 100;
 let character_y = 250;
 let character_energy = 100;
+let final_boss_energy = 100;
 let isMovingRight = false;
 let isMovingLeft = false;
 let bg_elements = 0;
@@ -13,9 +14,11 @@ let characterGraphicsLeft = ['img/charakter_left_1.png', 'img/charakter_left_2.p
 let characterGraphicIndex = 0;
 let cloudOffset = 0;
 let chickens = [];
-let placedBottles = [1000, 1700, 2500];
-let collectedBottles = 0;
-
+let placedBottles = [500, 1000, 1700, 2500, 2800, 3000, 3300];
+let collectedBottles = 50;
+let bottleThrowTime = 0;
+let trownBottleX = 0;
+let trownBottleY = 0;
 
 // -------------- Game config --------------
 let JUMP_TIME = 300; // in ms
@@ -23,6 +26,12 @@ let GAME_SPEED = 7;
 let AUDIO_RUNNING = new Audio('audio/running.mp3');
 let AUDIO_JUMP = new Audio('audio/jump.mp3');
 let AUDIO_BOTTLE = new Audio('audio/bottle.mp3');
+let AUDIO_THROW = new Audio('audio/throw.mp3');
+let AUDIO_CHICKEN = new Audio('audio/chicken.mp3');
+let AUDIO_GLASS = new Audio('audio/glass.mp3');
+let AUDIO_BACKGROUND_MUSIC = new Audio('audio/music.mp3');
+AUDIO_BACKGROUND_MUSIC.loop = true;
+AUDIO_BACKGROUND_MUSIC.volume = 0.2;
 
 
 
@@ -65,6 +74,15 @@ function checkForCollision() {
                 }
             }
         }
+
+        // Check final boss 
+        if (trownBottleX > 1000 + bg_elements - 100 && trownBottleX < 1000 + bg_elements + 100) {
+            console.log('Treffer. Energie: ' + final_boss_energy);
+            final_boss_energy = final_boss_energy - 10;
+            AUDIO_GLASS.play();
+        }
+
+
     }, 100);
 }
 
@@ -125,6 +143,38 @@ function draw() {
     requestAnimationFrame(draw);
     drawEnergyBar();
     drawInformation();
+    drawThrowBottle();
+    drawFinalBoss();
+}
+
+function drawFinalBoss() {
+    let chicken_x = 1000;
+    addBackgroundObject('img/chicken_big.png', chicken_x, 98, 0.45, 1);
+
+
+    ctx.globalAlpha = 0.5;
+    ctx.fillStyle = "red";
+    ctx.fillRect(970 + bg_elements, 95, 2 * final_boss_energy, 10);
+    ctx.globalAlpha = 0.2;
+    ctx.fillStyle = "black";
+    ctx.fillRect(968 + bg_elements, 92, 205, 15);
+    ctx.globalAlpha = 1;
+
+}
+
+function drawThrowBottle() {
+    if (bottleThrowTime) {
+        let timePassed = new Date().getTime() - bottleThrowTime;
+        let gravity = Math.pow(9.81, timePassed / 300)
+        trownBottleX = 125 + (timePassed * 0.7);
+        trownBottleY = 300 - (timePassed * 0.6 - gravity);
+
+        let base_image = new Image();
+        base_image.src = 'img/tabasco.png';
+        if (base_image.complete) {
+            ctx.drawImage(base_image, trownBottleX, trownBottleY, base_image.width * 0.5, base_image.height * 0.5);
+        }
+    }
 }
 
 function drawInformation() {
@@ -280,6 +330,15 @@ function listenForKeys() {
         if (k == 'ArrowLeft') {
             isMovingLeft = true;
             // character_x = character_x - 5;
+        }
+
+        if (k == 'd' && collectedBottles > 0) {
+            let timePassed = new Date().getTime() - bottleThrowTime;
+            if (timePassed > 1000) {
+                AUDIO_THROW.play();
+                collectedBottles--;
+                bottleThrowTime = new Date().getTime();
+            }
         }
 
         let timePassedSinceJump = new Date().getTime() - lastJumpStarted;
